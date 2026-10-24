@@ -112,7 +112,7 @@ class BackendLocal(Backend):
 
     def lire(self, table):
         with self._verrou:
-            return self._tout()[table].reindex(columns=TABLES[table]).fillna("")
+            return self._tout()[table].reindex(columns=TABLES[table]).fillna("").astype(str)
 
     def ajouter(self, table, lignes):
         if not lignes:

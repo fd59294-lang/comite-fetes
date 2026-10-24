@@ -273,7 +273,7 @@ def _onglet_articles():
     a = charger("articles").copy()
     a["actif"] = a["actif"].astype(str).str.lower() != "non"
     for col in ("prix_vente", "seuil_alerte"):
-        a[col] = pd.to_numeric(a[col], errors="coerce")
+        a[col] = metier.nombres(a[col])
     edite = st.data_editor(a, num_rows="dynamic", hide_index=True, width="stretch",
                            disabled=not est_admin(), key="articles_editeur", column_config={
         "id": None, "nom": st.column_config.TextColumn("Article", required=True),
@@ -324,7 +324,7 @@ def _onglet_inventaire_materiel(dispo: pd.DataFrame):
     st.caption("Disponible = quantité possédée − quantité actuellement sortie (manifestation ou prêt).")
     m = charger("materiel").copy()
     for col in ("quantite", "valeur_unitaire"):
-        m[col] = pd.to_numeric(m[col], errors="coerce")
+        m[col] = metier.nombres(m[col])
     m["date_achat"] = pd.to_datetime(m["date_achat"], errors="coerce")
     m.insert(4, "disponible", m["id"].map(dispo.set_index("id")["disponible"]) if not m.empty else [])
     edite = st.data_editor(m, num_rows="dynamic", hide_index=True, width="stretch",
@@ -429,7 +429,7 @@ def _onglet_retours(dispo: pd.DataFrame, sorties: pd.DataFrame):
     manquants = int(s["quantite"]) - qte
     mat = charger("materiel").copy()
     if manquants and retirer:
-        q = pd.to_numeric(mat.loc[mat["id"] == s["materiel_id"], "quantite"], errors="coerce").fillna(0)
+        q = metier.nombres(mat.loc[mat["id"] == s["materiel_id"], "quantite"]).fillna(0)
         mat.loc[mat["id"] == s["materiel_id"], "quantite"] = (q - manquants).clip(lower=0).astype(int).astype(str)
     if etat in ("À réparer", "Hors service"):
         mat.loc[mat["id"] == s["materiel_id"], "etat"] = etat

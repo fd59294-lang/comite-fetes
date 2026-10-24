@@ -153,7 +153,7 @@ def page_tableau_de_bord():
         ).properties(height=280), width="stretch")
 
     prev = charger("previsionnel")
-    prev = prev[pd.to_numeric(prev["exercice"], errors="coerce") == ex]
+    prev = prev[metier.nombres(prev["exercice"]) == ex]
     if not prev.empty:
         st.subheader("Prévu / réalisé")
         reel = _synthese(ops, ex, lecture).set_index("manifestation")
@@ -318,7 +318,7 @@ def page_manifestations():
     st.header("Manifestations")
     st.caption("Chaque manifestation récurrente est un modèle : ses éditions successives se comparent d'une année sur l'autre.")
     m = charger("manifestations").copy()
-    m["mois"] = pd.to_numeric(m["mois"], errors="coerce").fillna(0).astype(int).map(lambda i: MOIS[i])
+    m["mois"] = metier.nombres(m["mois"]).fillna(0).astype(int).map(lambda i: MOIS[i])
     m["actif"] = m["actif"].astype(str).str.lower() != "non"
     edite = st.data_editor(
         m, hide_index=True, width="stretch", disabled=["nom"] if est_admin() else True,
@@ -379,13 +379,13 @@ def page_previsionnel():
                      help="Fréquentation, tarifs… Mettre une valeur négative pour un scénario prudent (météo).")
     base = metier.base_previsionnelle(ops, manifestations(actives_seulement=True), int(annee), methode, hausse, evol)
     existant = charger("previsionnel")
-    existant = existant[pd.to_numeric(existant["exercice"], errors="coerce") == annee]
+    existant = existant[metier.nombres(existant["exercice"]) == annee]
     if not existant.empty:
         st.info("Un prévisionnel est déjà enregistré pour cet exercice : il est affiché ci-dessous. "
                 "Modifiez les montants puis enregistrez pour le mettre à jour.")
         base = base.drop(columns=["recettes", "depenses", "resultat"]).merge(
             existant[["manifestation", "recettes", "depenses", "commentaire"]], on="manifestation", how="left")
-        base[["recettes", "depenses"]] = base[["recettes", "depenses"]].apply(pd.to_numeric, errors="coerce").fillna(0)
+        base[["recettes", "depenses"]] = base[["recettes", "depenses"]].apply(metier.nombres).fillna(0)
     if "commentaire" not in base:
         base["commentaire"] = ""
     st.caption("La proposition vient de l'historique ; ajustez chaque ligne à la main si besoin.")
@@ -408,7 +408,7 @@ def page_previsionnel():
         width="stretch")
     if est_admin() and st.button("Enregistrer ce prévisionnel", type="primary"):
         autres = charger("previsionnel")
-        autres = autres[pd.to_numeric(autres["exercice"], errors="coerce") != annee]
+        autres = autres[metier.nombres(autres["exercice"]) != annee]
         maj = datetime.now().strftime("%Y-%m-%d %H:%M")
         neuf = edite.assign(exercice=int(annee), maj_le=maj)[["exercice", "manifestation", "recettes", "depenses",
                                                                "commentaire", "maj_le"]]

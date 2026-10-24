@@ -13,7 +13,7 @@ from datetime import date, datetime
 
 import pandas as pd
 
-from metier import exercice_de, nouvel_id
+from metier import exercice_de, nombres, nouvel_id
 from referentiel import JOURS_ALERTE_DLC, TABLES
 
 TYPES_ENTREE_VALORISEE = {"achat", "don_recu"}
@@ -25,7 +25,7 @@ def typer_mouvements(df: pd.DataFrame) -> pd.DataFrame:
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df["dlc"] = pd.to_datetime(df["dlc"], errors="coerce")
     for col in ("quantite", "cout_unitaire"):
-        df[col] = pd.to_numeric(df[col].astype(str).str.replace(",", "."), errors="coerce").fillna(0.0)
+        df[col] = nombres(df[col]).fillna(0.0)
     return df
 
 
@@ -174,7 +174,7 @@ def mouvement(jour: date, article_id: str, type_: str, quantite: float, manifest
 def typer_sorties(df: pd.DataFrame) -> pd.DataFrame:
     df = (df if not df.empty else pd.DataFrame(columns=TABLES["sorties_materiel"])).copy()
     for col in ("quantite", "quantite_retour", "caution", "montant_location"):
-        df[col] = pd.to_numeric(df[col].astype(str).str.replace(",", "."), errors="coerce").fillna(0.0)
+        df[col] = nombres(df[col]).fillna(0.0)
     for col in ("date_sortie", "date_retour_prevue", "date_retour"):
         df[col] = pd.to_datetime(df[col], errors="coerce")
     df["en_cours"] = df["date_retour"].isna()
@@ -184,9 +184,9 @@ def typer_sorties(df: pd.DataFrame) -> pd.DataFrame:
 def disponibilite(materiel: pd.DataFrame, sorties: pd.DataFrame) -> pd.DataFrame:
     m = materiel.copy()
     for col in ("quantite", "valeur_unitaire"):
-        m[col] = pd.to_numeric(m[col].astype(str).str.replace(",", "."), errors="coerce").fillna(0)
+        m[col] = nombres(m[col]).fillna(0.0)
     dehors = sorties[sorties["en_cours"]].groupby("materiel_id")["quantite"].sum()
-    m["en_sortie"] = m["id"].map(dehors).fillna(0)
+    m["en_sortie"] = nombres(m["id"].map(dehors)).fillna(0.0)
     m["disponible"] = m["quantite"] - m["en_sortie"]
     m["valeur"] = m["quantite"] * m["valeur_unitaire"]
     return m

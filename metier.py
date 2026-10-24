@@ -13,13 +13,21 @@ from referentiel import (COLONNES_IMPORT, MANIFESTATION_GENERALE, MODES_PAIEMENT
 
 
 # ------------------------------------------------------------------ typage
+def nombres(serie: pd.Series) -> pd.Series:
+    """Convertit une colonne (texte, nombres, vide) en float64, quel que soit le type d'origine."""
+    valeurs = ["" if v is None else str(v).replace(",", ".").replace("\u202f", "").replace(" ", "").strip()
+               for v in serie.tolist()]
+    return pd.Series(pd.to_numeric(pd.Series(valeurs, index=serie.index, dtype=object), errors="coerce"),
+                     index=serie.index, dtype="float64")
+
+
 def typer_operations(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     if df.empty:
         df = pd.DataFrame(columns=TABLES["operations"])
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df["montant"] = pd.to_numeric(df["montant"].astype(str).str.replace(",", "."), errors="coerce").fillna(0.0)
-    df["exercice"] = pd.to_numeric(df["exercice"], errors="coerce").fillna(0).astype(int)
+    df["montant"] = nombres(df["montant"]).fillna(0.0)
+    df["exercice"] = nombres(df["exercice"]).fillna(0).astype(int)
     df["signe"] = df["montant"].where(df["sens"] == "Recette", -df["montant"])
     return df
 
