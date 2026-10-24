@@ -1,0 +1,9 @@
+streamlit>=1.66,<2
+pandas>=2.2
+openpyxl>=3.1
+altair>=5
+gspread>=6.1
+google-auth>=2.30
+google-auth-oauthlib>=1.2
+google-api-python-client>=2.130
+Authlib>=1.3
