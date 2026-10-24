@@ -181,12 +181,15 @@ def typer_sorties(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def disponibilite(materiel: pd.DataFrame, sorties: pd.DataFrame) -> pd.DataFrame:
+def disponibilite(materiel: pd.DataFrame, sorties: pd.DataFrame, pretes: pd.Series | None = None) -> pd.DataFrame:
+    """Disponibilité immédiate : possédé − sorti pour une manifestation − prêté à une association."""
     m = materiel.copy()
     for col in ("quantite", "valeur_unitaire"):
         m[col] = nombres(m[col]).fillna(0.0)
     dehors = sorties[sorties["en_cours"]].groupby("materiel_id")["quantite"].sum()
     m["en_sortie"] = nombres(m["id"].map(dehors)).fillna(0.0)
+    if pretes is not None and not pretes.empty:
+        m["en_sortie"] = m["en_sortie"] + nombres(m["id"].map(pretes)).fillna(0.0)
     m["disponible"] = m["quantite"] - m["en_sortie"]
     m["valeur"] = m["quantite"] * m["valeur_unitaire"]
     return m

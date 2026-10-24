@@ -7,6 +7,7 @@ import pandas as pd
 import streamlit as st
 
 import metier
+import prets
 import stock
 from commun import (flash, backend, charger, eur, est_admin, journaliser, manifestations, mois_debut, operations,
                     peut_saisir, rafraichir)
@@ -298,14 +299,16 @@ def _onglet_articles():
 def page_materiel():
     st.header("Matériel")
     sorties = stock.typer_sorties(charger("sorties_materiel"))
-    dispo = stock.disponibilite(charger("materiel"), sorties)
+    pretes = prets.quantites_pretees_maintenant(prets.typer_prets(charger("prets")),
+                                                prets.typer_lignes(charger("prets_lignes")))
+    dispo = stock.disponibilite(charger("materiel"), sorties, pretes)
     en_retard = stock.retards(sorties)
     if not en_retard.empty:
         noms = dispo.set_index("id")["nom"]
         st.error("**Retours en retard** : " + " · ".join(
             f"{noms.get(r.materiel_id, '?')} ×{r.quantite:g} ({r.emprunteur or r.manifestation}, prévu le "
             f"{r.date_retour_prevue:%d/%m/%Y})" for r in en_retard.itertuples()))
-    onglets = st.tabs(["Inventaire", "Sortie ou prêt", "Retours", "Historique"])
+    onglets = st.tabs(["Inventaire", "Sortie pour une manifestation", "Retours", "Historique"])
     with onglets[0]:
         _onglet_inventaire_materiel(dispo)
     with onglets[1]:
@@ -321,7 +324,8 @@ def _onglet_inventaire_materiel(dispo: pd.DataFrame):
     c1.metric("Valeur du matériel", eur(dispo["valeur"].sum()))
     c2.metric("Pièces actuellement sorties", int(dispo["en_sortie"].sum()))
     c3.metric("À réparer / hors service", int(dispo["etat"].isin(["À réparer", "Hors service"]).sum()))
-    st.caption("Disponible = quantité possédée − quantité actuellement sortie (manifestation ou prêt).")
+    st.caption("Disponible = quantité possédée − quantité actuellement sortie pour une manifestation ou prêtée "
+               "à une association.")
     m = charger("materiel").copy()
     for col in ("quantite", "valeur_unitaire"):
         m[col] = metier.nombres(m[col])
@@ -351,7 +355,9 @@ def _onglet_sortie(dispo: pd.DataFrame):
     if not peut_saisir() or dispo.empty:
         st.caption("Aucun matériel." if dispo.empty else "Lecture seule.")
         return
-    destination = st.radio("Destination", DESTINATIONS, horizontal=True)
+    st.caption("Les prêts aux associations se gèrent dans la page « Prêts aux associations » (bon de prêt, "
+               "réservations, suivi).")
+    destination = DESTINATIONS[0]
     with st.form("sortie_materiel", clear_on_submit=True):
         mat = st.selectbox("Matériel", dispo["id"].tolist(), format_func=lambda i: (
             lambda r: f"{r['nom']} — disponible : {r['disponible']:g}")(dispo[dispo["id"] == i].iloc[0]))

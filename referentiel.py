@@ -96,6 +96,11 @@ TABLES = {
     # ---- matériel durable
     "materiel": ["id", "nom", "categorie", "quantite", "etat", "emplacement", "valeur_unitaire",
                  "date_achat", "commentaire"],
+    "associations": ["id", "nom", "contact", "telephone", "email", "adresse", "commentaire", "actif"],
+    "prets": ["id", "numero", "association_id", "statut", "date_debut", "date_fin_prevue", "date_depart",
+              "date_retour", "caution", "caution_rendue", "montant_location", "operation_id", "commentaire",
+              "cree_par", "cree_le"],
+    "prets_lignes": ["id", "pret_id", "materiel_id", "quantite", "etat_depart", "quantite_rendue", "etat_retour"],
     "sorties_materiel": ["id", "materiel_id", "quantite", "destination", "manifestation", "emprunteur",
                          "contact", "caution", "caution_rendue", "montant_location", "date_sortie",
                          "date_retour_prevue", "date_retour", "quantite_retour", "etat_retour",
@@ -121,6 +126,14 @@ CATEGORIES_MATERIEL = ["Mobilier", "Barnum et abri", "Cuisine et buvette", "Son 
                        "Décoration", "Signalétique", "Autre"]
 ETATS_MATERIEL = ["Bon", "Usé", "À réparer", "Hors service"]
 DESTINATIONS = ["Manifestation", "Prêt / location"]
+
+# ------------------------------------------------------------------ prêts aux associations
+STATUTS_PRET = {"reserve": "Réservé", "en_cours": "En cours", "rendu": "Rendu", "annule": "Annulé"}
+CONDITIONS_PRET = (
+    "Le matériel est prêté à titre gracieux sauf mention d'un prix de location. L'emprunteur s'engage à le "
+    "rendre propre, complet et en bon état à la date convenue. Toute pièce perdue, cassée ou détériorée sera "
+    "facturée à sa valeur de remplacement ; la caution peut être conservée à cet effet. Le matériel est placé "
+    "sous la responsabilité de l'emprunteur pendant toute la durée du prêt.")
 
 ROLES = ["president", "tresorier", "secretaire", "lecteur"]
 ROLES_LIBELLES = {"president": "Président(e)", "tresorier": "Trésorier(e)",

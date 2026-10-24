@@ -13,9 +13,12 @@ import streamlit as st
 st.set_page_config(page_title="Comité des Fêtes — Gestion", page_icon="🎪", layout="wide")
 
 import metier  # noqa: E402
+import prets
 import stock
 from commun import (flash, afficher_flash, backend, charger, rafraichir, eur, parametre, ecrire_parametre, journaliser,
                     initialiser_si_vide, operations, manifestations, mois_debut, peut_saisir, est_admin)
+from ecran_prets import page_prets
+from ecran_rapports import page_rapports
 from ecrans_stock import page_materiel, page_stock
 from referentiel import (APP_NOM, MANIFESTATION_GENERALE, MODES_PAIEMENT, MOIS, ROLES, ROLES_ADMIN,
                          ROLES_LIBELLES, SENS, TABLES, categories)
@@ -191,6 +194,14 @@ def _alertes_tableau_de_bord():
     alertes += [f"Matériel non rendu : {noms.get(r.materiel_id, '?')} ×{r.quantite:g} "
                 f"({r.emprunteur or r.manifestation}, prévu le {r.date_retour_prevue:%d/%m/%Y})"
                 for r in stock.retards(sorties).itertuples()]
+    p = prets.typer_prets(charger("prets"))
+    if not p.empty:
+        assos = charger("associations")
+        noms_asso = assos.set_index("id")["nom"] if not assos.empty else pd.Series(dtype=str)
+        alertes += [f"Prêt {r.numero} non rendu ({noms_asso.get(r.association_id, '?')}, retour prévu le "
+                    f"{r.date_fin_prevue:%d/%m/%Y})" for r in prets.en_retard(p).itertuples()]
+        alertes += [f"Prêt {r.numero} à préparer pour {noms_asso.get(r.association_id, '?')} (le "
+                    f"{r.date_debut:%d/%m/%Y})" for r in prets.a_preparer(p).itertuples()]
     if alertes:
         with st.container(border=True):
             st.markdown("**⚠️ À traiter**")
@@ -553,12 +564,14 @@ def main():
             st.warning("Mode essai : données locales, sans connexion.")
     pages = {
         "Pilotage": [st.Page(page_tableau_de_bord, title="Tableau de bord", icon="📊", default=True),
-                     st.Page(page_previsionnel, title="Prévisionnel", icon="🔮", url_path="previsionnel")],
+                     st.Page(page_previsionnel, title="Prévisionnel", icon="🔮", url_path="previsionnel"),
+                     st.Page(page_rapports, title="Rapports d'AG", icon="📄", url_path="rapports")],
         "Comptabilité": [st.Page(page_saisie, title="Saisir une opération", icon="✏️", url_path="saisie"),
                          st.Page(page_operations, title="Opérations", icon="📒", url_path="operations"),
                          st.Page(page_import, title="Import Excel", icon="📥", url_path="import")],
         "Logistique": [st.Page(page_stock, title="Stock boissons et alimentation", icon="🍺", url_path="stock"),
-                       st.Page(page_materiel, title="Matériel", icon="⛺", url_path="materiel")],
+                       st.Page(page_materiel, title="Matériel", icon="⛺", url_path="materiel"),
+                       st.Page(page_prets, title="Prêts aux associations", icon="🤝", url_path="prets")],
         "Association": [st.Page(page_manifestations, title="Manifestations", icon="🎪", url_path="manifestations"),
                         st.Page(page_sauvegarde, title="Sauvegarde et export", icon="💾", url_path="sauvegarde")],
     }

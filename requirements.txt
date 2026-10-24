@@ -8,3 +8,5 @@ google-auth-oauthlib>=1.2
 google-api-python-client>=2.130
 Authlib>=1.3.2
 httpx>=0.27
+reportlab>=4.0
+matplotlib>=3.8
